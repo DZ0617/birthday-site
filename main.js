@@ -916,23 +916,91 @@ function buildPassBox(album, onOk) {
 /* 解锁成功：照片依次掉落 + 可点击放大 */
 function renderPhotos(c, album) {
   c.innerHTML = '';
-  var grid = ce('div', 'photo-grid');
+  var caps = (typeof ALBUM_CAPTIONS !== 'undefined' && ALBUM_CAPTIONS[album.id]) || [];
+  var view = ce('div', 'story-view');
+  var stage = ce('div', 'story-stage');
+  var track = ce('div', 'story-track');
+  var slides = [], cur = 0, moved = false, startX = 0, dx = 0;
+
   album.photos.forEach(function (pid, i) {
-    var p = ce('div', 'fall-photo');
-    p.style.animationDelay = (i * 0.18) + 's';
+    var sl = ce('div', 'story-slide');
     var img = ce('img');
-    img.src = 'assets/images/' + pid + '.jpg';
     img.alt = album.name + (i + 1);
-    img.loading = 'lazy';
     img.decoding = 'async';
-    p.appendChild(img);
-    p.addEventListener('click', function () {
+    img.addEventListener('click', function () {
+      if (moved) return;
       SFX.shutter();
-      openLightbox(img.src);
+      openLightbox('assets/images/' + pid + '.jpg');
     });
-    grid.appendChild(p);
+    sl.appendChild(img);
+    track.appendChild(sl);
+    slides.push(sl);
   });
-  c.appendChild(grid);
+
+  var cap = ce('div', 'story-caption');
+  var counter = ce('div', 'story-counter');
+  var prevBtn = ce('button', 'story-arrow prev', '‹');
+  var nextBtn = ce('button', 'story-arrow next', '›');
+  prevBtn.setAttribute('aria-label', '上一张');
+  nextBtn.setAttribute('aria-label', '下一张');
+
+  function preload(i) {
+    if (i < 0 || i >= slides.length) return;
+    var im = slides[i].querySelector('img');
+    if (!im.src) im.src = 'assets/images/' + album.photos[i] + '.jpg';
+  }
+  function paint() {
+    track.style.transform = 'translateX(' + (-cur * 100) + '%)';
+    counter.textContent = (cur + 1) + ' / ' + album.photos.length;
+    cap.innerHTML = '';
+    var info = caps[cur] || {};
+    if (info.title) cap.appendChild(ce('span', 'story-cap-title', info.title));
+    if (info.text) cap.appendChild(ce('span', 'story-cap-text', info.text));
+    cap.classList.remove('story-cap-in');
+    void cap.offsetWidth;
+    cap.classList.add('story-cap-in');
+    prevBtn.classList.toggle('off', cur === 0);
+    nextBtn.classList.toggle('off', cur === album.photos.length - 1);
+    preload(cur + 1);
+    preload(cur - 1);
+  }
+  function go(n) {
+    cur = Math.max(0, Math.min(album.photos.length - 1, n));
+    track.style.transition = '';
+    paint();
+  }
+
+  prevBtn.addEventListener('click', function () { SFX.click(); go(cur - 1); });
+  nextBtn.addEventListener('click', function () { SFX.click(); go(cur + 1); });
+  stage.appendChild(track);
+  stage.appendChild(counter);
+  stage.appendChild(prevBtn);
+  stage.appendChild(nextBtn);
+  view.appendChild(stage);
+  view.appendChild(cap);
+  c.appendChild(view);
+
+  stage.addEventListener('touchstart', function (e) {
+    moved = false;
+    startX = e.touches[0].clientX;
+    dx = 0;
+    track.style.transition = 'none';
+  }, { passive: true });
+  stage.addEventListener('touchmove', function (e) {
+    dx = e.touches[0].clientX - startX;
+    if (Math.abs(dx) > 8) moved = true;
+    track.style.transform = 'translateX(' + (-cur * 100 + dx / stage.clientWidth * 100) + '%)';
+  }, { passive: true });
+  stage.addEventListener('touchend', function () {
+    track.style.transition = '';
+    if (dx < -50) go(cur + 1);
+    else if (dx > 50) go(cur - 1);
+    else paint();
+  });
+
+  preload(0);
+  preload(1);
+  paint();
 }
 
 /* ============================================================
