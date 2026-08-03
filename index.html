@@ -6,9 +6,36 @@
 <meta name="theme-color" content="#0b1026">
 <meta name="format-detection" content="telephone=no">
 <title>我们的第三年</title>
-<link rel="stylesheet" href="style.css?v=20260806">
+<link rel="stylesheet" href="style.css?v=20260807">
 </head>
 <body>
+
+<!-- ============ 开屏密码锁：先输入开屏密码才能进入 ============ -->
+<div id="lockScreen">
+  <div class="lock-inner">
+    <div class="lock-emoji">&#128274;</div>
+    <p class="lock-title">&#25105;&#20204;&#30340;&#31532;&#19977;&#24180;</p>
+    <p class="lock-sub">&#24464;&#33402;&#20025;&#65292;&#20808;&#36755;&#20837;&#25105;&#30340;&#25163;&#26426;&#24320;&#23631;&#23494;&#30721;</p>
+    <div id="lockDots" class="lock-dots" aria-label="&#23494;&#30721;&#36755;&#20837;">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <p id="lockMsg" class="lock-msg"></p>
+    <div id="lockPad" class="lock-pad" role="group" aria-label="&#25968;&#23383;&#38190;&#30424;">
+      <button type="button" data-key="1">1</button>
+      <button type="button" data-key="2">2</button>
+      <button type="button" data-key="3">3</button>
+      <button type="button" data-key="4">4</button>
+      <button type="button" data-key="5">5</button>
+      <button type="button" data-key="6">6</button>
+      <button type="button" data-key="7">7</button>
+      <button type="button" data-key="8">8</button>
+      <button type="button" data-key="9">9</button>
+      <button type="button" data-key="del" aria-label="&#21024;&#38500;">&#9003;</button>
+      <button type="button" data-key="0">0</button>
+      <button type="button" data-key="ok" aria-label="&#30830;&#35748;">&#10003;</button>
+    </div>
+  </div>
+</div>
 
 <!-- ============ 加载页：全部资源就绪才放行 ============ -->
 <div id="loader">
@@ -151,8 +178,8 @@
 <!-- 粒子画布（彩带 / 烟花） -->
 <canvas id="fx"></canvas>
 
-<script src="assets/data.js?v=20260806"></script>
-<script src="assets/lyrics.js?v=20260806"></script>
-<script src="main.js?v=20260806"></script>
+<script src="assets/data.js?v=20260807"></script>
+<script src="assets/lyrics.js?v=20260807"></script>
+<script src="main.js?v=20260807"></script>
 </body>
 </html>

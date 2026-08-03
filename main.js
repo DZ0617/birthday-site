@@ -1198,6 +1198,72 @@ document.addEventListener('visibilitychange', function () {
    启动
    ============================================================ */
 /* ============================================================
+   开屏密码锁：输入正确密码后才开始加载资源
+   ============================================================ */
+var LOCK = {
+  pass: '617520',
+  val: '',
+  el: null,
+  dots: [],
+  msg: null,
+  init: function () {
+    this.el = $('#lockScreen');
+    this.msg = $('#lockMsg');
+    this.dots = Array.prototype.slice.call(document.querySelectorAll('#lockDots span'));
+    var self = this;
+    document.querySelectorAll('#lockPad button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var k = b.getAttribute('data-key');
+        if (k === 'del') self.del();
+        else if (k === 'ok') self.submit();
+        else self.push(k);
+      });
+    });
+    document.addEventListener('keydown', function (e) {
+      if (/^\d$/.test(e.key)) self.push(e.key);
+      else if (e.key === 'Backspace') self.del();
+      else if (e.key === 'Enter') self.submit();
+    });
+  },
+  push: function (d) {
+    if (this.val.length >= 6) return;
+    this.val += d;
+    this.msg.textContent = '';
+    this.render();
+    if (this.val.length === 6) this.submit();
+  },
+  del: function () {
+    this.val = this.val.slice(0, -1);
+    this.msg.textContent = '';
+    this.render();
+  },
+  submit: function () {
+    if (this.val.length < 6) {
+      this.msg.textContent = '\u8fd8\u5dee ' + (6 - this.val.length) + ' \u4f4d\u54e6~';
+      return;
+    }
+    var self = this;
+    if (this.val === this.pass) {
+      this.msg.textContent = '';
+      this.el.classList.add('unlocked');
+      LOADER.start();
+      setTimeout(function () { self.el.style.display = 'none'; }, 650);
+    } else {
+      this.msg.textContent = '\u5bc6\u7801\u4e0d\u5bf9\u54e6\uff0c\u518d\u8bd5\u4e00\u6b21~';
+      var d = document.getElementById('lockDots');
+      d.classList.remove('shake');
+      void d.offsetWidth;
+      d.classList.add('shake');
+      this.val = '';
+      this.render();
+    }
+  },
+  render: function () {
+    for (var i = 0; i < 6; i++) this.dots[i].classList.toggle('on', i < this.val.length);
+  }
+};
+
+/* ============================================================
    加载页：照片 + BGM 全部就绪后才放行
    ============================================================ */
 var assetsReady = false;
@@ -1260,7 +1326,7 @@ var LOADER = {
   }
 };
 $('#loaderSkip').addEventListener('click', function () { LOADER.force(); });
-LOADER.start();
+LOCK.init();
 
 makeStars($('#s1Stars'), 60);
 makeStars($('#s2Stars'), 46);
