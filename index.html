@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b1026">
+<meta name="format-detection" content="telephone=no">
+<title>我们的第三年</title>
+<link rel="stylesheet" href="style.css?v=20260806">
+</head>
+<body>
+
+<!-- ============ 加载页：全部资源就绪才放行 ============ -->
+<div id="loader">
+  <div class="loader-inner">
+    <div class="loader-gift">🎁</div>
+    <div class="loader-title">我们的第三年</div>
+    <div class="loader-bar"><div id="loaderBar"></div></div>
+    <div id="loaderText" class="loader-text">正在加载回忆 0%</div>
+    <button id="loaderSkip">网络慢？点此直接进入</button>
+  </div>
+</div>
+
+<!-- 右上角常驻静音按钮 -->
+<button id="muteBtn" aria-label="静音 / 取消静音">🔊</button>
+
+<!-- ============ 第 1 幕 · 拆礼物 ============ -->
+<section id="s1" class="scene active">
+  <div class="stars" id="s1Stars"></div>
+  <div class="center-wrap">
+    <div id="giftBox" class="gift" role="button" aria-label="拆开礼物">
+      <div class="g-bow"></div>
+      <div class="g-lid"></div>
+      <div class="g-box"></div>
+    </div>
+    <p id="openNote" class="open-note">🎧 戴上耳机使用，或者使用电脑效果更好！</p>
+    <p id="giftHint" class="hint pulse">艺丹，有一份礼物要给你<br>→ 点我拆开</p>
+    <div id="greeting" class="greeting hidden">
+      <h1 id="bigTitle" class="big-title"></h1>
+      <p id="subTitle" class="subtitle hidden">这是我陪你过的第三个生日</p>
+    </div>
+    <button id="toS2" class="btn primary hidden">拆完礼物，进来坐坐 →</button>
+  </div>
+</section>
+
+<!-- ============ 第 2 幕 · 吹蜡烛 ============ -->
+<section id="s2" class="scene">
+  <div class="stars" id="s2Stars"></div>
+  <div class="center-wrap">
+    <p id="candleHint" class="hint">许个愿，然后对着手机吹一口气</p>
+    <div class="cake" id="cake">
+      <div class="candle" style="left:74px"><span class="flame"></span><span class="smoke"></span></div>
+      <div class="candle" style="left:110px"><span class="flame"></span><span class="smoke"></span></div>
+      <div class="candle" style="left:146px"><span class="flame"></span><span class="smoke"></span></div>
+      <div class="layer2"></div>
+      <div class="layer1"></div>
+      <div class="plate"></div>
+    </div>
+    <div class="wind-wrap"><div id="windBar" class="wind-bar"></div></div>
+    <p id="candleNudge" class="nudge"></p>
+    <p id="wishMsg" class="wish-msg hidden">愿望我收到了~<br>等见面那天，我帮你实现一个！</p>
+    <button id="toS3" class="btn primary hidden">继续 →</button>
+  </div>
+</section>
+
+<!-- ============ 第 3 幕 · 时光轴 ============ -->
+<section id="s3" class="scene">
+  <div class="scene-head">
+    <h2>我们的时光轴</h2>
+    <p class="head-sub">小时候 → 2026.5.30</p>
+  </div>
+  <div id="tlScroll" class="scroll tl-scroll">
+    <div id="tlList"></div>
+    <div class="tl-end">
+      <p>故事还没完，<br>接下来的，要你帮我一起解锁 →</p>
+      <button id="toS4" class="btn primary">下一幕 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 第 4 幕 · 秘密相册 ============ -->
+<section id="s4" class="scene">
+  <div class="scene-head">
+    <h2>秘密相册</h2>
+    <p class="head-sub">三个房间，各藏了一点小秘密</p>
+  </div>
+  <div class="scroll body-scroll">
+    <div id="roomList" class="room-list"></div>
+    <div id="roomView" class="room-view hidden">
+      <button id="roomBack" class="btn ghost small">← 返回房间列表</button>
+      <div id="roomContent"></div>
+    </div>
+    <div class="s4-foot">
+      <button id="toS5" class="btn primary">接下来，考考你 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 第 5 幕 · 默契大考验 ============ -->
+<section id="s5" class="scene">
+  <div id="quizView" class="center-wrap">
+    <div class="quiz-top">
+      <span id="qProgress">第 1 / 10 题</span>
+      <span id="qScore">得分 0</span>
+    </div>
+    <div id="quizCard" class="quiz-card">
+      <h3 id="qText"></h3>
+      <div id="qOptions"></div>
+    </div>
+  </div>
+  <div id="rewardView" class="center-wrap hidden">
+    <p id="rScore" class="r-score"></p>
+    <h2 id="rTitle" class="r-title"></h2>
+    <div id="rCoupons" class="coupon-list"></div>
+    <p class="r-note">截图保存，终身有效</p>
+    <button id="toS6" class="btn primary">玩累了？最后还有一个东西，是给你的 →</button>
+  </div>
+</section>
+
+<!-- ============ 第 6 幕 · 终章 ============ -->
+<section id="s6" class="scene">
+  <div id="finaleIntro">
+    <p id="fLine1" class="f-line f-big"></p>
+    <h2 id="fTitle" class="f-line f-title"></h2>
+    <p id="fSub" class="f-line f-sub"></p>
+    <button id="playSong" class="btn primary hidden">▶ 播放这首歌</button>
+  </div>
+  <div id="finalePlayer" class="hidden">
+    <div id="kbWrap"></div>
+    <p id="songMissingNote" class="missing-note hidden">歌曲还在路上，见面那天唱给你听</p>
+    <button id="skipSong" class="btn ghost small">跳过 »</button>
+    <div class="lyrics-wrap"><div id="lyricsBox"></div></div>
+  </div>
+  <div id="letterView" class="hidden">
+    <div class="letter-card" id="letterCard"></div>
+  </div>
+</section>
+
+<!-- 大图查看 -->
+<div id="lightbox" class="hidden"><img id="lightboxImg" alt="照片大图"></div>
+
+<!-- 彩蛋弹窗 -->
+<div id="eggModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-emoji">🎂</div>
+    <p id="eggText"></p>
+    <button id="eggClose" class="btn primary small">我也爱你 ❤</button>
+  </div>
+</div>
+
+<!-- 粒子画布（彩带 / 烟花） -->
+<canvas id="fx"></canvas>
+
+<script src="assets/data.js?v=20260806"></script>
+<script src="assets/lyrics.js?v=20260806"></script>
+<script src="main.js?v=20260806"></script>
+</body>
+</html>
