@@ -1149,7 +1149,15 @@ function renderDaily(c) {
 }
 
 /* 房间三：绝密档案，永远打不开 */
+/* 房间三：绝密档案——前 7 次照常拒绝，第 8 次反转开门掉「死缠烂打券」 */
+var forbiddenCracked = false; // 是否已开门（本局只开一次）
+var forbiddenCard = {
+  icon: '🔓', text: '死缠烂打券', rarity: 'SSR', tier: 3,
+  desc: '对着一扇打不开的门连试 8 次密码的狠人，值得表彰：凭此券可要求他如实回答任何一个问题，不许撒谎、不许装傻、不许转移话题。'
+};
+
 function renderForbidden(c) {
+  if (forbiddenCracked) { renderForbiddenCracked(c); return; } // 已开过：直接显示战利品
   var a = ALBUMS.forbidden;
   var card = ce('div', 'task-card');
   card.appendChild(ce('p', 'task-text', '⚠️ 本房间为最高机密~请输入密码~（提示：没有提示）'));
@@ -1164,10 +1172,12 @@ function renderForbidden(c) {
   function tryIt() {
     SFX.key();
     denyCount++;
+    // —— 第 8 次：反转开门 ——
+    if (denyCount >= 8) { openForbidden(c); return; }
     SFX.fail();
     buzz(70);
-    // 逐步升级的拒绝文案，第 5 次起触发“安慰奖”
-    if (denyCount >= 6) msg.textContent = a.denyMore[2];
+    if (denyCount === 7) msg.textContent = '（门锁发出了奇怪的声音……）'; // 第 7 次埋钩子
+    else if (denyCount >= 6) msg.textContent = a.denyMore[2];
     else if (denyCount === 5) msg.textContent = a.denyMore[1];
     else if (denyCount === 4) msg.textContent = a.denyMore[0];
     else msg.textContent = a.denyMsg + (denyCount >= 3 ? '\n' + a.denyMsg3 : '');
@@ -1184,6 +1194,42 @@ function renderForbidden(c) {
   wrap.appendChild(msg);
   card.appendChild(wrap);
   c.appendChild(card);
+}
+
+/* 反转开门：掉卡 + 撒花 */
+function openForbidden(c) {
+  forbiddenCracked = true;
+  SFX.unlock();
+  buzz([40, 60, 40, 60, 80]);
+  addCard(forbiddenCard); // 入卡包，自动发编号
+  renderForbiddenCracked(c, true);
+  SFX.reward();
+  confetti(window.innerWidth / 2, window.innerHeight * 0.3, 90);
+  setTimeout(function () {
+    heartFireworkAt(window.innerWidth / 2, window.innerHeight * 0.32,
+      Math.min(window.innerWidth, window.innerHeight) * 0.24);
+    SFX.firework();
+  }, 500);
+}
+
+/* 开门后的房间内容（firstTime=true 时是首次开门的演出） */
+function renderForbiddenCracked(c, firstTime) {
+  c.innerHTML = '';
+  var panel = ce('div', 'task-card');
+  panel.appendChild(ce('p', 'task-text',
+    firstTime
+      ? '……行吧，我输了。<br>这个房间根本就没有密码，我承认。<br>但你居然试了 8 次都没放弃——这种精神必须表彰。门开了，里面没有照片，只有一张卡，归你了：'
+      : '这个房间已经被你用死缠烂打的方式攻破了。<br>战利品在下面，卡包里也有一份~'));
+  var got = ce('div', 'game-got-list');
+  got.innerHTML = cardsToHtml([forbiddenCard]);
+  panel.appendChild(got);
+  var btn = ce('button', 'btn primary small', '收下，回房间列表');
+  btn.addEventListener('click', function () {
+    SFX.click();
+    $('#roomBack').click(); // 复用现有返回逻辑
+  });
+  panel.appendChild(btn);
+  c.appendChild(panel);
 }
 
 /* 密码输入组（校验前 trim 空格） */
@@ -2024,7 +2070,7 @@ function renderSets() {
   rewardBag.forEach(function (c) { if (got[c.rarity] != null) got[c.rarity]++; });
   var html = '';
   ['N', 'R', 'SR', 'SSR'].forEach(function (r) {
-    var total = r === 'SSR' ? REWARDS.SSR.length + 1 : REWARDS[r].length;
+    var total = r === 'SSR' ? REWARDS.SSR.length + 2 : REWARDS[r].length; // 卡池外还有两张隐藏 SSR：终极券 + 死缠烂打券
     html += '<span class="set-chip" style="--rc:' + RARITY[r].color + '">' + r + ' ' + got[r] + '/' + total + '</span>';
   });
   box.innerHTML = html;
