@@ -55,13 +55,15 @@ button { font-family: inherit; }
   opacity: 0;
   visibility: hidden;
   z-index: 1;
-  transition: opacity .7s ease, visibility 0s linear .7s;
+  transform: translateY(28px) scale(.99);
+  transition: opacity .55s ease, transform .55s ease, visibility 0s linear .55s;
 }
 .scene.active {
   opacity: 1;
   visibility: visible;
   z-index: 2;
-  transition: opacity .7s ease;
+  transform: none;
+  transition: opacity .65s ease .06s, transform .65s cubic-bezier(.22,.8,.24,1) .06s;
 }
 
 .scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -78,7 +80,10 @@ button { font-family: inherit; }
   text-align: center;
   position: relative;
   z-index: 2;
+  overflow-y: auto; /* 内容超出一屏时可滚动（结算/卡包/按钮不被挤出视口） */
+  scrollbar-width: none;
 }
+.center-wrap::-webkit-scrollbar { display: none; }
 
 .scene-head {
   padding: calc(env(safe-area-inset-top, 0px) + 56px) 20px 10px;
@@ -291,6 +296,23 @@ button { font-family: inherit; }
   pointer-events: none;
 }
 
+/* ---------- 音乐播放时的柔光呼吸（playBGM/startPlayer 添加 .on） ---------- */
+#bgPulse {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: radial-gradient(62% 46% at 50% 84%, rgba(255,190,110,.5), rgba(255,143,171,.16) 55%, transparent 78%);
+  opacity: 0;
+  transition: opacity 1.4s ease;
+}
+#bgPulse.on { animation: pulseBreath 3.4s ease-in-out infinite; }
+@keyframes pulseBreath {
+  0%, 100% { opacity: .05; }
+  50%      { opacity: .2; }
+}
+
 /* ============================================================
    第 1 幕 · 拆礼物
    ============================================================ */
@@ -382,13 +404,29 @@ button { font-family: inherit; }
 .greeting { animation: fadeIn .6s ease; }
 .big-title {
   font-size: clamp(34px, 9vw, 46px);
-  letter-spacing: 3px;
   min-height: 1.4em;
-  background: linear-gradient(135deg, #fff3d0, var(--warm) 55%, var(--warm-2));
+  animation: titleGlow 2.8s ease-in-out infinite;
+}
+/* 逐字弹入 + 每字独立渐变（background-clip:text 需落在字本身） */
+.big-title .ch {
+  display: inline-block;
+  margin: 0 1.5px;
+  background: linear-gradient(120deg, #fff3d0 15%, var(--warm) 38%, #fff8e2 50%, var(--warm-2) 62%, #fff3d0 85%);
+  background-size: 260% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: titleGlow 2.8s ease-in-out infinite;
+  animation: charIn .6s cubic-bezier(.2,.9,.3,1.4) both, chSheen 3.6s linear infinite;
+  animation-delay: var(--d, 0s), var(--sd, 0s);
+}
+@keyframes charIn {
+  0%   { opacity: 0; transform: translateY(26px) rotate(-12deg) scale(1.6); }
+  60%  { opacity: 1; transform: translateY(-4px) rotate(3deg) scale(.96); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes chSheen { /* 流光扫过（每字 --sd 错相位，形成波浪） */
+  from { background-position: 130% 0; }
+  to   { background-position: -130% 0; }
 }
 @keyframes titleGlow {
   0%,100% { text-shadow: 0 0 24px rgba(255,217,138,.22); }
@@ -407,6 +445,7 @@ button { font-family: inherit; }
 }
 
 .cake {
+  --wind: 0; /* JS 每帧更新：吹气强度 0~1，火苗随之倾斜压扁 */
   position: relative;
   width: 230px;
   height: 220px;
@@ -481,7 +520,8 @@ button { font-family: inherit; }
   width: 46px; height: 46px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255,190,80,.35), transparent 70%);
-  transition: opacity .3s ease;
+  opacity: calc(1 - var(--wind, 0) * .55); /* 吹气时烛光变暗 */
+  transition: opacity .18s ease;
 }
 .candle.out-now::before { opacity: 0; }
 .flame {
@@ -507,8 +547,8 @@ button { font-family: inherit; }
   background: radial-gradient(circle at 50% 70%, #fff, #ffe98a 72%, transparent);
 }
 @keyframes flick {
-  from { transform: translateX(-50%) scale(1) rotate(-3deg); }
-  to   { transform: translateX(-50%) scale(1.14, .92) rotate(3deg); }
+  from { transform: translateX(calc(-50% - var(--wind, 0) * 7px)) rotate(calc(-3deg - var(--wind, 0) * 22deg)) scale(calc(1 - var(--wind, 0) * .2), calc(1 - var(--wind, 0) * .16)); }
+  to   { transform: translateX(calc(-50% - var(--wind, 0) * 7px)) rotate(calc(3deg - var(--wind, 0) * 58deg)) scale(calc(1.14 - var(--wind, 0) * .34), calc(.92 - var(--wind, 0) * .42)); }
 }
 .flame.out {
   animation: none;
@@ -562,6 +602,30 @@ button { font-family: inherit; }
    第 3 幕 · 时光轴
    ============================================================ */
 .tl-scroll { padding: 8px 20px 50px; }
+
+/* 滚动进度线：随滚动点亮时光轴左侧 */
+#tlList { position: relative; }
+.tl-track {
+  position: absolute;
+  left: 0; top: 8px; bottom: 8px;
+  width: 2px;
+  border-radius: 2px;
+  background: rgba(255,217,138,.1);
+}
+.tl-fill {
+  width: 100%;
+  height: 0;
+  border-radius: 2px;
+  background: linear-gradient(var(--warm), var(--warm-2));
+  box-shadow: 0 0 8px rgba(255,217,138,.75);
+}
+/* 站点标题/文字滚动渐入 */
+.rise {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity .55s ease, transform .55s ease;
+}
+.rise.in { opacity: 1; transform: none; }
 
 .station {
   position: relative;
@@ -889,7 +953,45 @@ button { font-family: inherit; }
   border-radius: 3px;
   background: #e8e2d5;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,.05);
-}/* ============================================================
+}
+.scratch-badge { /* 相册照片角标：提示可刮开 */
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 32px; height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border-radius: 50%;
+  background: rgba(232, 181, 101, .92);
+  box-shadow: 0 3px 10px rgba(0,0,0,.35);
+  animation: wiggle 2s ease-in-out infinite;
+  z-index: 2;
+}
+/* 照片墙遮罩：未刮开的照片缩略图全部盖住 */
+.photo-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,.35), transparent 45%),
+    repeating-linear-gradient(45deg, #d8c9a4 0 10px, #c9b98e 10px 20px);
+  border-radius: 6px;
+  transition: opacity .4s ease;
+  z-index: 3;
+}
+.photo-cover::after {
+  content: '刮一刮';
+  position: absolute;
+  bottom: 8px;
+  font-size: 11px;
+  color: rgba(90, 66, 20, .75);
+  letter-spacing: 2px;
+}
+.photo-cover.off { opacity: 0; pointer-events: none; }/* ============================================================
    第 5 幕 · 默契大考验
    ============================================================ */
 .quiz-top {
@@ -1135,11 +1237,23 @@ button { font-family: inherit; }
   font-size: 19px;
   font-weight: 600;
   transform: scale(1.05);
-  background: linear-gradient(135deg, #fff3d0, var(--warm));
+  background-image: linear-gradient(90deg, #fff3d0 0%, var(--warm) 42%, #ffe9bd 50%, rgba(255,255,255,.48) 58%, rgba(255,255,255,.48) 100%);
+  background-size: 220% 100%;
+  background-position: 100% 0;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 12px rgba(255,217,138,.45));
+}
+/* 卡拉OK扫光：JS 按每句时长设置 animationDuration */
+.lyr.on.fill {
+  animation-name: lyrFill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes lyrFill {
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
 }
 
 #letterView {
@@ -1147,12 +1261,15 @@ button { font-family: inherit; }
   inset: 0;
   z-index: 4;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 26px;
   background: rgba(0,0,0,.5);
   animation: fadeIn 1.4s ease;
+  overflow-y: auto; /* 内容超长时可滚动 */
 }
+.letter-next { margin-top: 20px; }
 .letter-card {
   position: relative;
   width: 100%;
@@ -1224,6 +1341,7 @@ button { font-family: inherit; }
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: fadeIn .25s ease;
+  touch-action: none; /* 手势全部接管：滑动切图、点按关闭 */
 }
 #lightbox img {
   max-width: 100%;
@@ -1231,7 +1349,42 @@ button { font-family: inherit; }
   border: 8px solid #fffdf5;
   border-radius: 10px;
   box-shadow: 0 16px 50px rgba(0,0,0,.65);
-  animation: popIn .3s ease;
+}
+#lightboxImg.lb-pop { animation: popIn .28s ease; }
+.lb-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(20,26,58,.6);
+  border: 1px solid rgba(255,217,138,.45);
+  color: var(--warm);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: transform .15s ease;
+}
+.lb-nav:active { transform: translateY(-50%) scale(.9); }
+.lb-prev { left: 12px; }
+.lb-next { right: 12px; }
+.lb-count {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(255,255,255,.15);
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,.8);
 }
 
 /* ---------- 彩蛋弹窗 ---------- */
@@ -1270,11 +1423,14 @@ button { font-family: inherit; }
 }
 .modal-card p { font-size: 15px; line-height: 2; margin-bottom: 18px; }
 
-/* ---------- 减弱动效偏好 ---------- */
+/* ---------- 减弱动效偏好：全部动画/过渡压到瞬时 ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .stars::after,
-  .btn.primary::after,
-  .egg::after { display: none; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  .polaroid, .rise, .fall-photo, .letter-card p, .big-title .ch { opacity: 1 !important; transform: none !important; }
 }
 /* ---------- 开屏密码锁 ---------- */
 #lockScreen {
@@ -1346,3 +1502,445 @@ button { font-family: inherit; }
 }
 .lock-pad button:active { transform: scale(.92); background: rgba(255,217,138,.16); }
 .lock-pad button[data-key="del"], .lock-pad button[data-key="ok"] { font-size: 20px; color: var(--warm); }
+
+/* ============================================================
+   愿望瓶（第 2 幕 · 吹蜡烛界面底部）
+   ============================================================ */
+.wish-box {
+  width: min(82vw, 320px);
+  margin-top: 6px;
+  animation: fadeUp .8s ease .6s both;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.wish-box textarea {
+  width: 100%;
+  min-height: 56px;
+  resize: none;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink);
+  background: rgba(255, 253, 245, .92);
+  border: 1.5px solid rgba(255, 217, 138, .45);
+  outline: none;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .3);
+  transition: border-color .2s ease, box-shadow .2s ease;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.wish-box textarea:focus {
+  border-color: var(--warm-2);
+  box-shadow: 0 0 0 3px rgba(255, 180, 94, .25), 0 6px 18px rgba(0, 0, 0, .3);
+}
+.wish-tip {
+  min-height: 18px;
+  margin-top: 6px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(255, 255, 255, .55);
+}
+.wish-tip.ok { color: var(--warm); }
+
+/* 终章信纸下方的愿望展示 */
+.wish-reveal {
+  margin-top: 22px;
+  max-width: 350px;
+  background: rgba(255, 253, 245, .96);
+  border-radius: 14px;
+  padding: 18px 20px;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .45);
+  animation: popIn .6s ease both;
+}
+.wish-reveal .wr-title { font-size: 15px; font-weight: 700; color: #8a6d3b; letter-spacing: 2px; }
+.wish-reveal .wr-body {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--ink);
+  font-family: "Songti SC", "STSong", "SimSun", serif;
+}
+.wish-reveal .wr-note { margin-top: 10px; font-size: 13px; color: #b08a55; }
+
+/* ============================================================
+   第 4.5 幕 · 接爱心小游戏
+   ============================================================ */
+#sGame { background: radial-gradient(ellipse at 50% 120%, #1c2350 0%, #10142f 55%, #070a1c 100%); }
+.game-head {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  left: 0; right: 0;
+  z-index: 4;
+  text-align: center;
+  pointer-events: none;
+}
+.game-head h2 { font-size: 22px; letter-spacing: 3px; color: var(--warm); text-shadow: 0 0 16px rgba(255, 217, 138, .35); }
+.g-hud {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 18px;
+  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.g-hud span {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .4);
+  border: 1px solid rgba(255, 217, 138, .3);
+  backdrop-filter: blur(4px);
+}
+#gameTime { color: var(--warm); }
+#gameScore { color: #fff; }
+#gameLives { color: var(--pink); }
+#gameCv {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+.game-result {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 30px;
+  background: rgba(7, 10, 28, .72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-align: center;
+  animation: fadeIn .5s ease;
+}
+.game-result .btn { pointer-events: auto; }
+
+/* ============================================================
+   第 5 幕 · 模式选择 + 倒计时
+   ============================================================ */
+.mode-title {
+  font-size: 26px;
+  letter-spacing: 3px;
+  background: linear-gradient(135deg, #fff3d0, var(--warm) 55%, var(--warm-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: popIn .5s ease both;
+}
+.mode-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+}
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 22px 18px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(255, 217, 138, .32);
+  background: linear-gradient(160deg, rgba(255, 255, 255, .1), rgba(255, 255, 255, .04));
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .38), inset 0 1px 0 rgba(255, 255, 255, .12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform .15s ease, border-color .2s ease;
+}
+.mode-card:active { transform: scale(.96); }
+.mode-card:first-child { border-color: rgba(255, 143, 171, .5); }
+.mode-icon { font-size: 34px; }
+.mode-name { font-size: 19px; font-weight: 700; letter-spacing: 2px; color: var(--warm); }
+.mode-desc { font-size: 13px; line-height: 1.8; color: rgba(255, 255, 255, .7); }
+
+.q-timer {
+  width: min(78vw, 340px);
+  height: 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .1);
+  border: 1px solid rgba(255, 255, 255, .1);
+  overflow: hidden;
+}
+.q-timer-bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--pink), var(--warm));
+  box-shadow: 0 0 10px rgba(255, 143, 171, .5);
+}
+.q-timer.warn .q-timer-bar { background: linear-gradient(90deg, var(--red), var(--pink)); }
+
+/* ============================================================
+   第 5.5 幕 · 歌曲猜名
+   ============================================================ */
+.song-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+}
+.song-options .opt { min-height: 52px; }
+
+/* ============================================================
+   照片刮刮卡（全屏涂层刮开）
+   ============================================================ */
+#scratchCard {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  background: rgba(0, 0, 0, .9);
+  animation: fadeIn .25s ease;
+  touch-action: none;
+}
+.scratch-tip {
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: var(--warm);
+  text-shadow: 0 0 12px rgba(255, 217, 138, .4);
+}
+.scratch-stage {
+  position: relative;
+  width: min(88vw, 420px);
+  aspect-ratio: 1 / 1.15;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .6);
+}
+.scratch-stage img,
+.scratch-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* 注意：涂层必须完全画在 canvas 像素里，不能给 canvas 设 CSS background——
+   否则刮干净后露出来的是 CSS 背景而不是底下的照片 */
+#scratchCv {
+  cursor: crosshair;
+}
+.scratch-line {
+  min-height: 22px;
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: var(--warm);
+  text-align: center;
+  animation: fadeUp .5s ease both;
+}
+#scratchClose { z-index: 2; }
+
+/* ============================================================
+   奖励刮刮乐弹窗
+   ============================================================ */
+.prize-card { max-width: 340px; }
+.prize-title {
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.prize-sub {
+  font-size: 13px;
+  color: #8a6d3b;
+  min-height: 18px;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+.prize-stage {
+  position: relative;
+  width: min(72vw, 250px);
+  aspect-ratio: 1 / 1.1;
+  margin: 0 auto 14px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .3);
+}
+.prize-stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: crosshair;
+}
+.prize-reveal {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(#fffdf5, #f8efdc);
+  text-align: center;
+  padding: 14px;
+}
+.prize-reveal .pr-icon { font-size: 44px; }
+.prize-reveal .pr-text {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--ink);
+  font-weight: 600;
+}
+#prizePool { max-height: 200px; overflow-y: auto; }
+#prizePool .coupon { cursor: pointer; transition: transform .12s ease; }
+#prizePool .coupon:active { transform: scale(.95); }
+
+/* ============================================================
+   奖励总览（sBag）+ 爱心结算获得的卡片
+   ============================================================ */
+.bag-list { width: 100%; max-width: 400px; margin: 0 auto; }
+.bag-card { padding-right: 56px; } /* 给「换」按钮留位 */
+.bag-swap {
+  position: absolute;
+  right: 14px; top: 50%;
+  transform: translateY(-50%);
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid #d8a24a;
+  background: linear-gradient(135deg, #ffe9bd, #ffd98a);
+  color: #7a5310;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, .25);
+  transition: transform .12s ease;
+}
+.bag-swap:active { transform: translateY(-50%) scale(.88); }
+.bag-swap-note {
+  margin: 14px auto 6px;
+  max-width: 400px;
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--warm);
+  text-align: center;
+}
+.game-got-list { max-width: 320px; }
+.game-got-list .coupon { padding: 12px 16px; }
+
+/* ============================================================
+   银河漫游 + 指尖物理 + 全息卡包 + 接爱心重做（新增样式）
+   ============================================================ */
+
+/* ---------- 视差星野画布 / 极光 / 月相 ---------- */
+.sky { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+.aurora { position: absolute; border-radius: 50%; filter: blur(46px); opacity: .5; pointer-events: none; z-index: 1; }
+.au-a { width: 340px; height: 120px; left: -60px; top: 16%;
+  background: linear-gradient(90deg, rgba(6,214,160,.25), rgba(120,180,255,.12));
+  animation: auA 9s ease-in-out infinite alternate; }
+.au-b { width: 380px; height: 130px; right: -80px; top: 38%;
+  background: linear-gradient(90deg, rgba(255,143,171,.2), rgba(255,217,138,.1));
+  animation: auB 11s ease-in-out infinite alternate; }
+@keyframes auA { from { transform: translateX(0) rotate(-8deg); } to { transform: translateX(70px) rotate(-4deg); } }
+@keyframes auB { from { transform: translateX(0) rotate(6deg); } to { transform: translateX(-80px) rotate(10deg); } }
+.moon { position: absolute; top: 8%; left: 9%; width: 52px; height: 52px; border-radius: 50%; overflow: hidden; z-index: 1;
+  background: radial-gradient(circle at 34% 32%, #fffbe8, #ffe9b0 58%, #f3cd7c);
+  box-shadow: 0 0 24px 8px rgba(255,233,176,.32), 0 0 90px 42px rgba(255,217,138,.12); }
+.moon::after { content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: #0e1330; transform: translateX(60px); transition: transform 1.2s ease; }
+.moon[data-phase="1"]::after { transform: translateX(24px); }
+.moon[data-phase="2"]::after { transform: translateX(10px); }
+
+/* ---------- 通用 toast ---------- */
+.toast { position: absolute; left: 50%; top: 18%; transform: translateX(-50%) translateY(-8px);
+  z-index: 40; max-width: 84vw; padding: 8px 18px; border-radius: 999px;
+  background: rgba(11,16,38,.78); border: 1px solid rgba(255,217,138,.4);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  font-size: 13px; letter-spacing: 1px; color: #ffe9b8; text-align: center;
+  opacity: 0; pointer-events: none; transition: opacity .4s ease, transform .4s ease; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- 指尖物理：tilt / 拍立得显影 ---------- */
+.tilt-live { animation: none !important; opacity: 1 !important; }
+.polaroid img { transition: filter 5s ease, opacity 5s ease; }
+.polaroid.fresh img { filter: grayscale(1) brightness(1.3) contrast(.55) blur(1px); opacity: .7; }
+.polaroid.developed img { filter: none; opacity: 1; }
+.polaroid.developed { animation: devPop .5s ease; }
+@keyframes devPop { 0% { filter: brightness(1.6); } 100% { filter: brightness(1); } }
+
+/* ---------- 全息稀有卡（卡包扇形列表） ---------- */
+.bag-fan { display: flex; gap: 14px; overflow-x: auto; padding: 14px 8px 22px;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
+.bag-fan::-webkit-scrollbar { display: none; }
+.holo-card { flex: none; scroll-snap-align: center; width: 158px; height: 230px;
+  perspective: 900px; cursor: pointer; opacity: 0; animation: popIn .5s ease forwards; }
+.hc-inner { position: relative; width: 100%; height: 100%;
+  transform-style: preserve-3d; transition: transform .6s cubic-bezier(.4,0,.2,1); }
+.holo-card.flip .hc-inner { transform: rotateY(180deg); }
+.hc-face { position: absolute; inset: 0; border-radius: 14px; overflow: hidden;
+  backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  display: flex; flex-direction: column; align-items: center; }
+.hc-front { border: 1.5px solid var(--rc, #58B2DC);
+  background: linear-gradient(160deg, #232c5e, #141a3d 60%, #0b1026); color: #fff;
+  box-shadow: 0 14px 30px rgba(0,0,0,.5); padding: 14px 12px; }
+.holo-card.ssr .hc-front::before { content: ''; position: absolute; inset: -40%;
+  background: linear-gradient(115deg, transparent 42%, rgba(255,215,128,.4) 48%, rgba(255,143,171,.32) 52%, rgba(160,196,255,.3) 56%, transparent 64%);
+  animation: hcSheen 2.8s linear infinite; pointer-events: none; }
+@keyframes hcSheen { from { transform: translateX(-35%); } to { transform: translateX(35%); } }
+.hc-holo { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+  background: radial-gradient(150px circle at var(--mx, 50%) var(--my, 35%), rgba(255,255,255,.28), transparent 62%); }
+.hc-rar { position: absolute; top: 10px; left: 10px; font-size: 10px; font-weight: 700;
+  letter-spacing: 1px; padding: 2px 8px; border-radius: 999px;
+  border: 1px solid var(--rc); color: var(--rc); background: rgba(11,16,38,.5); }
+.hc-icon { font-size: 44px; margin-top: 36px; filter: drop-shadow(0 0 12px rgba(255,255,255,.25)); }
+.hc-name { font-size: 15px; font-weight: 600; margin-top: 12px; letter-spacing: 1px; text-align: center; }
+.hc-no { position: absolute; bottom: 10px; font-size: 9px; letter-spacing: 2px; color: rgba(255,255,255,.45); }
+.hc-back { transform: rotateY(180deg); background: linear-gradient(#fffdf5, #f8efdc);
+  color: var(--ink); border: 1.5px solid var(--rc); padding: 16px 14px; align-items: flex-start; }
+.hc-bt { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--rc); margin-bottom: 8px; }
+.hc-bd { font-size: 12px; line-height: 1.8; text-align: left; }
+.hc-bf { position: absolute; bottom: 12px; left: 14px; right: 14px; font-size: 10px;
+  color: #9a8868; letter-spacing: 1px; border-top: 1px dashed #d8c9a8; padding-top: 8px; }
+.hc-back .bag-swap { position: static; margin-top: 12px; align-self: center; min-height: 34px; padding: 6px 14px;
+  border-radius: 999px; border: 1px solid #d8c9a8; background: #fff; color: var(--ink);
+  font-size: 12px; cursor: pointer; }
+.bag-sets { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 4px 0 12px; }
+.set-chip { font-size: 11px; font-weight: 600; letter-spacing: 1px; padding: 4px 12px;
+  border-radius: 999px; border: 1px solid var(--rc); color: var(--rc); background: rgba(255,255,255,.04); }
+.set-combine { font-size: 11px; padding: 4px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px dashed rgba(255,217,138,.6); color: var(--warm); background: rgba(255,217,138,.08); }
+
+/* ---------- 迷你卡（游戏/问答结算用） ---------- */
+.mini-card { position: relative; display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--rc, #58B2DC);
+  background: linear-gradient(160deg, #232c5e, #141a3d 65%, #0b1026);
+  box-shadow: 0 8px 20px rgba(0,0,0,.4); overflow: hidden;
+  opacity: 0; animation: popIn .45s ease forwards; }
+.mini-card.ssr::before { content: ''; position: absolute; inset: -40%;
+  background: linear-gradient(115deg, transparent 42%, rgba(255,215,128,.35) 50%, transparent 60%);
+  animation: hcSheen 2.8s linear infinite; pointer-events: none; }
+.mc-icon { font-size: 26px; }
+.mc-name { flex: 1; font-size: 15px; color: #fff; text-align: left; letter-spacing: 1px; }
+.mc-rar { font-size: 10px; font-weight: 700; color: var(--rc);
+  border: 1px solid var(--rc); border-radius: 999px; padding: 2px 8px; }
+.mc-no { font-size: 9px; color: rgba(255,255,255,.4); letter-spacing: 1px; }
+.game-got-list { display: flex; flex-direction: column; gap: 10px; width: min(86vw, 320px); }
+
+/* ---------- 接爱心重做：规则页 / 连击 / 倒计时 / 受击闪屏 ---------- */
+#gameCv { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+#sGame .game-head { position: relative; z-index: 2; }
+.game-rules { position: absolute; inset: 0; z-index: 8; display: flex; align-items: center;
+  justify-content: center; padding: 22px;
+  background: rgba(11,16,38,.72); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.rules-card { width: 100%; max-width: 380px; padding: 22px 18px; border-radius: 18px;
+  background: linear-gradient(160deg, rgba(255,255,255,.1), rgba(255,255,255,.04));
+  border: 1px solid rgba(255,217,138,.3); box-shadow: 0 16px 40px rgba(0,0,0,.4);
+  

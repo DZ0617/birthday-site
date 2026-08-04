@@ -5,8 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b1026">
 <meta name="format-detection" content="telephone=no">
+<meta property="og:title" content="我们的第三年 🎂">
+<meta property="og:description" content="艺丹，有一份礼物要给你 →">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/images/t01.jpg">
 <title>我们的第三年</title>
-<link rel="stylesheet" href="style.css?v=20260809">
+<link rel="stylesheet" href="style.css?v=20260821">
 </head>
 <body>
 
@@ -53,7 +57,10 @@
 
 <!-- ============ 第 1 幕 · 拆礼物 ============ -->
 <section id="s1" class="scene active">
-  <div class="stars" id="s1Stars"></div>
+  <canvas class="sky" id="sky1"></canvas>
+  <div class="aurora au-a"></div>
+  <div class="aurora au-b"></div>
+  <div class="moon" data-phase="1"></div>
   <div class="center-wrap">
     <div id="giftBox" class="gift" role="button" aria-label="拆开礼物">
       <div class="g-bow"></div>
@@ -66,13 +73,13 @@
       <h1 id="bigTitle" class="big-title"></h1>
       <p id="subTitle" class="subtitle hidden">这是我陪你过的第三个生日</p>
     </div>
-    <button id="toS2" class="btn primary hidden">拆完礼物，进来坐坐 →</button>
   </div>
 </section>
 
 <!-- ============ 第 2 幕 · 吹蜡烛 ============ -->
 <section id="s2" class="scene">
-  <div class="stars" id="s2Stars"></div>
+  <canvas class="sky" id="sky2"></canvas>
+  <div class="moon" data-phase="2"></div>
   <div class="center-wrap">
     <p id="candleHint" class="hint">许个愿，然后对着手机吹一口气</p>
     <div class="cake" id="cake">
@@ -85,8 +92,11 @@
     </div>
     <div class="wind-wrap"><div id="windBar" class="wind-bar"></div></div>
     <p id="candleNudge" class="nudge"></p>
-    <p id="wishMsg" class="wish-msg hidden">愿望我收到了~<br>等见面那天，我帮你实现一个！</p>
-    <button id="toS3" class="btn primary hidden">继续 →</button>
+    <div id="wishBox" class="wish-box">
+      <textarea id="wishInput" maxlength="100" rows="2" placeholder="&#20889;&#19979;&#20320;&#30340;&#29983;&#26085;&#24895;&#26395;~"></textarea>
+      <button id="wishConfirm" class="btn primary small">&#10004; 确定愿望</button>
+      <p id="wishTip" class="wish-tip"></p>
+    </div>
   </div>
 </section>
 
@@ -118,18 +128,69 @@
       <div id="roomContent"></div>
     </div>
     <div class="s4-foot">
-      <button id="toS5" class="btn primary">接下来，考考你 →</button>
+      <button id="toS5" class="btn primary">接下来，先玩个小游戏？→</button>
     </div>
+  </div>
+</section>
+
+<!-- ============ 第 4.5 幕 · 接爱心小游戏 ============ -->
+<section id="sGame" class="scene">
+  <div class="game-head">
+    <div class="g-hud">
+      <span id="gameTime">30</span>
+      <span id="gameScore">0</span>
+      <span id="gameLives">❤❤❤</span>
+    </div>
+    <h2>接住我的心</h2>
+    <p class="head-sub" id="gameHint">手机：左右滑动接住爱心 · 电脑：方向键 ← →</p>
+  </div>
+  <div id="gameRules" class="game-rules hidden">
+    <div class="rules-card">
+      <h3>🧺 接住我的心 · 玩法说明</h3>
+      <div class="rule-row"><span class="rule-ic">❤️</span><p>左右移动接爱心 <b>+10 分</b>，连续接住触发<b>连击</b>：5 连击得分 ×2，10 连击 ×3，漏接或中招连击清零</p></div>
+      <div class="rule-row"><span class="rule-ic">💔</span><p>躲开碎心！被砸 <b>-15 分</b>并扣 1 条命，3 条命用完游戏结束</p></div>
+      <div class="rule-row"><span class="rule-ic">✨</span><p>金色流星心 = <b>3 倍分</b>，还加 1 层护盾（可挡一次碎心）</p></div>
+      <div class="rule-row"><span class="rule-ic">🏆</span><p>接住 ≥20 颗得 <b>2 张卡</b>，≥30 颗得 <b>3 张卡</b>（含进阶卡）</p></div>
+      <button id="gameStart" class="btn primary">我准备好了，开始！</button>
+    </div>
+  </div>
+  <div id="gameCombo" class="game-combo hidden"></div>
+  <div id="gameCount" class="game-count hidden"></div>
+  <div id="gameFlash" class="game-flash"></div>
+  <canvas id="gameCv"></canvas>
+  <div id="gameResult" class="game-result hidden">
+    <p id="gameTitle" class="r-title"></p>
+    <p id="gameScoreTxt" class="r-score"></p>
+    <p id="gameGotTitle" class="head-sub hidden">&#127873; 本次获得</p>
+    <div id="gameGot" class="coupon-list game-got-list hidden"></div>
+    <button id="gameNext" class="btn primary">继续 →</button>
   </div>
 </section>
 
 <!-- ============ 第 5 幕 · 默契大考验 ============ -->
 <section id="s5" class="scene">
-  <div id="quizView" class="center-wrap">
+  <div id="modeView" class="center-wrap">
+    <h2 class="mode-title">默契大考验</h2>
+    <p class="head-sub">选择一个模式开始挑战~</p>
+    <div class="mode-cards">
+      <button id="modeFast" class="mode-card">
+        <span class="mode-icon">&#9201;&#65039;</span>
+        <span class="mode-name">限时快答</span>
+        <span class="mode-desc">每题 8 秒倒计时，连对有加速<br>奖励：愿望券 / 奶茶券 / 抱抱券…</span>
+      </button>
+      <button id="modeChill" class="mode-card">
+        <span class="mode-icon">&#127861;</span>
+        <span class="mode-name">悠闲节奏</span>
+        <span class="mode-desc">不限时，慢慢想慢慢答<br>奖励：红包（截图找我领取）</span>
+      </button>
+    </div>
+  </div>
+  <div id="quizView" class="center-wrap hidden">
     <div class="quiz-top">
       <span id="qProgress">第 1 / 10 题</span>
       <span id="qScore">得分 0</span>
     </div>
+    <div id="qTimer" class="q-timer hidden"><div id="qTimerBar" class="q-timer-bar"></div></div>
     <div id="quizCard" class="quiz-card">
       <h3 id="qText"></h3>
       <div id="qOptions"></div>
@@ -140,7 +201,38 @@
     <h2 id="rTitle" class="r-title"></h2>
     <div id="rCoupons" class="coupon-list"></div>
     <p class="r-note">截图保存，终身有效</p>
-    <button id="toS6" class="btn primary">玩累了？最后还有一个东西，是给你的 →</button>
+    <button id="toScratch" class="btn primary">&#127922; 还有一张刮刮卡，刮一下？</button>
+    <button id="toSong" class="btn ghost small hidden">&#127911; 还有一场听歌挑战，敢来吗？</button>
+  </div>
+</section>
+
+<!-- ============ 第 5.5 幕 · 听前奏猜歌名 ============ -->
+<section id="sSong" class="scene">
+  <div class="center-wrap">
+    <p id="songqProgress" class="r-score">第 1 / 5 首 · 得分 0</p>
+    <h2 class="mode-title">&#127911; 听前奏，猜歌名</h2>
+    <p class="head-sub" id="songqSub">都是我们的歌单~听出来了吗？</p>
+    <button id="songPlay" class="btn primary">&#9654; 播放前奏</button>
+    <p id="songReplay" class="head-sub">每首可重听 1 次（重听答对只得一半分）</p>
+    <div id="songOptions" class="song-options"></div>
+    <button id="toBag" class="btn primary hidden">&#127873; 看看你的奖励总览 →</button>
+  </div>
+</section>
+
+<!-- ============ 第 5.6 幕 · 奖励总览（可替换同级别卡，共 2 次机会） ============ -->
+<section id="sBag" class="scene">
+  <div class="scene-head">
+    <h2>&#127873; 你的奖励卡包</h2>
+    <p class="head-sub" id="bagSub">这趟旅程，你带走了这些~</p>
+  </div>
+  <div class="scroll body-scroll">
+    <div id="bagSets" class="bag-sets"></div>
+    <div id="bagList" class="coupon-list bag-list"></div>
+    <p class="bag-swap-note" id="bagSwapNote">&#128260; 有 2 次替换机会：点卡片上的「换」可以换一张同级别的随机奖励</p>
+    <p class="r-note">截图保存，全部终身有效~</p>
+    <div class="s4-foot">
+      <button id="toS6" class="btn primary">收下奖励，去终章 →</button>
+    </div>
   </div>
 </section>
 
@@ -150,7 +242,7 @@
     <p id="fLine1" class="f-line f-big"></p>
     <h2 id="fTitle" class="f-line f-title"></h2>
     <p id="fSub" class="f-line f-sub"></p>
-    <button id="playSong" class="btn primary hidden">▶ 播放这首歌</button>
+    <button id="playSong" class="btn primary hidden">&#9654; 播放这首歌</button>
   </div>
   <div id="finalePlayer" class="hidden">
     <div id="kbWrap"></div>
@@ -160,11 +252,49 @@
   </div>
   <div id="letterView" class="hidden">
     <div class="letter-card" id="letterCard"></div>
+    <button id="letterNext" class="btn primary letter-next hidden">下一页 →</button>
+    <div id="wishReveal" class="wish-reveal hidden"></div>
   </div>
 </section>
 
-<!-- 大图查看 -->
-<div id="lightbox" class="hidden"><img id="lightboxImg" alt="照片大图"></div>
+<!-- 大图查看（可左右滑动切换） -->
+<div id="lightbox" class="hidden">
+  <img id="lightboxImg" alt="照片大图">
+  <button id="lbPrev" class="lb-nav lb-prev" aria-label="上一张">&#8249;</button>
+  <button id="lbNext" class="lb-nav lb-next" aria-label="下一张">&#8250;</button>
+  <div id="lbCount" class="lb-count"></div>
+</div>
+
+<!-- 照片刮刮卡：点开相册照片 → 刮开涂层看照片 -->
+<div id="scratchCard" class="hidden">
+  <p id="scratchTip" class="scratch-tip">手指刮开银色涂层~</p>
+  <div class="scratch-stage">
+    <img id="scratchImg" alt="照片刮刮卡">
+    <canvas id="scratchCv"></canvas>
+  </div>
+  <p id="scratchLine" class="scratch-line"></p>
+  <button id="scratchClose" class="btn ghost small hidden">完成</button>
+</div>
+
+<!-- 奖励刮刮乐弹窗：答题后最多刮 3 次，最后三选一 -->
+<div id="prizeModal" class="modal hidden">
+  <div class="modal-card prize-card">
+    <h3 class="prize-title">&#127922; 奖励刮刮乐</h3>
+    <p id="prizeSub" class="prize-sub">刮开看看你抽到了什么（第 1 / 3 次）</p>
+    <div class="prize-stage">
+      <div id="prizeReveal" class="prize-reveal hidden"></div>
+      <canvas id="prizeCv"></canvas>
+    </div>
+    <div id="prizeBtns" class="chat-btns">
+      <button id="prizeAgain" class="btn primary small">还想刮一次！</button>
+      <button id="prizeKeep" class="btn ghost small">就这个了</button>
+    </div>
+    <p id="prizeChoose" class="prize-sub hidden">从刮到的 3 个奖励里，选一个保留~</p>
+    <div id="prizePool" class="coupon-list hidden"></div>
+    <p id="prizeDone" class="prize-sub hidden">记得截图保存，终身有效~</p>
+    <button id="prizeClose" class="btn primary small hidden">收下奖励</button>
+  </div>
+</div>
 
 <!-- 彩蛋弹窗 -->
 <div id="eggModal" class="modal hidden">
@@ -178,8 +308,11 @@
 <!-- 粒子画布（彩带 / 烟花） -->
 <canvas id="fx"></canvas>
 
-<script src="assets/data.js?v=20260809"></script>
-<script src="assets/lyrics.js?v=20260809"></script>
-<script src="main.js?v=20260809"></script>
+<!-- 播放音乐时的柔光呼吸层 -->
+<div id="bgPulse"></div>
+
+<script src="assets/data.js?v=20260821"></script>
+<script src="assets/lyrics.js?v=20260821"></script>
+<script src="main.js?v=20260821"></script>
 </body>
 </html>
