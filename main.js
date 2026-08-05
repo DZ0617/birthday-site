@@ -145,9 +145,9 @@ var SFX = {
   scratch:    function () { noise({ d: 0.05, peak: 0.1, filterType: 'bandpass', freq: 3200, q: 0.7 }); },
 };
 
-/* ---------- 八音盒版《生日快乐歌》（标准旋律，循环播放） ---------- */
+/* ---------- 八音盒版《生日快乐歌》（标准旋律，循环播放到离开吹蜡烛页） ---------- */
 var MusicBox = {
-  playing: false, timer: null, beat: 0.42, reps: 0, MAX_REPS: 1, // 只播一遍就停，不循环
+  playing: false, timer: null, beat: 0.42, reps: 0, MAX_REPS: 99, // 循环陪到她吹完蜡烛，由 leaveHooks.s2 停止
   // [MIDI 音高, 拍数]——标准 Happy Birthday 简谱
   melody: [
     [67, .75], [67, .25], [69, 1], [67, 1], [72, 1], [71, 2],
@@ -659,7 +659,7 @@ function startGreeting() {
   setTimeout(function () { SFX.click(); goto('s2'); }, total + 1200);
 }
 enterHooks.s1 = function () { sky1.start(); };
-leaveHooks.s1 = function () { MusicBox.stop(); sky1.stop(); };
+leaveHooks.s1 = function () { sky1.stop(); }; // 音乐不停：生日快乐歌继续陪到愿望/吹蜡烛页
 
 /* ============================================================
    第 2 幕 · 吹蜡烛（麦克风优先，失败降级长按）
@@ -710,7 +710,7 @@ enterHooks.s2 = function () {
   if (!micTried) { micTried = true; setupMic(); }
   enablePressMode(); // 长按兜底立即生效，麦克风拿到后两者都可用
 };
-leaveHooks.s2 = function () { clearMicFallback(); stopMic(); stopWind(); sky2.stop(); };
+leaveHooks.s2 = function () { clearMicFallback(); stopMic(); stopWind(); MusicBox.stop(); sky2.stop(); };
 
 function setupMic() {
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !AudioKit.ok) {
