@@ -2244,6 +2244,8 @@ function openScratchCard(src, onDone) {
    愿望瓶：必须填写愿望并点「确定」后才能吹蜡烛
    ============================================================ */
 var wishConfirmed = false;
+/* 测试模式：本地调试 / 局域网 / 带 ?test=1 参数时不发邮件，避免消耗 Formspree 额度 */
+var IS_TEST = /localhost|127\.0\.0\.1|file:|192\.168\.|^10\.|^172\.(1[6-9]|2\d|3[01])/i.test(location.hostname || '') || /[?&]test=1/.test(location.search);
 function initWish() {
   $('#wishConfirm').addEventListener('click', function () {
     var v = $('#wishInput').value.trim();
@@ -2274,7 +2276,12 @@ function saveWish() {
     var fd = new FormData();
     fd.append('wish', v);
     fd.append('_subject', '她写下了生日愿望 💌');
-    try { fetch(WISH.endpoint, { method: 'POST', body: fd, mode: 'no-cors' }).catch(function () {}); } catch (e) {}
+    if (IS_TEST) {
+      console.log('[测试模式] 愿望未发送（不消耗 Formspree 额度）：', v);
+      $('#wishTip').textContent = '（测试模式）愿望已记下，没发邮件~';
+    } else {
+      try { fetch(WISH.endpoint, { method: 'POST', body: fd, mode: 'no-cors' }).catch(function () {}); } catch (e) {}
+    }
   }
 }
 /* 终章信纸下方展示她写下的愿望 */
