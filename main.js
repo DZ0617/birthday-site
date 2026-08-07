@@ -2301,6 +2301,7 @@ function showWishReveal() {
    ============================================================ */
 var playerActive = false, degraded = false, letterShown = false;
 var curLyric = -2, fwFired = false, lyricsBuilt = false;
+var eggHideDone = false; // 歌曲部分播完（进入结尾彩蛋）后只隐藏一次歌词框
 var degRAF = null, degT0 = 0;
 var kbTimer = null, letterFw = null, letterPetals = null;
 
@@ -2380,6 +2381,14 @@ function buildLyrics() {
   box.appendChild(ce('div', 'lyr-space'));
 }
 function updateLyrics(t) {
+  var lastLyr = LYRICS[LYRICS.length - 1];
+  if (t > lastLyr.end) { // 歌曲部分播完，进入结尾彩蛋：歌词不再显示，照片继续轮播
+    if (!eggHideDone) {
+      eggHideDone = true;
+      $('#lyricsBox').classList.add('hidden');
+    }
+    return;
+  }
   var idx = -1;
   for (var i = 0; i < LYRICS.length; i++) {
     if (LYRICS[i].start <= t) idx = i;
